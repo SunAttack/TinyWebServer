@@ -5,9 +5,9 @@
 #include <vector>
 #include <atomic>
 #include <unistd.h> 
-#include <assert.h>
+#include <cassert>
 #include <cstring>
-#include <sys/uio.h>
+#include <sys/uio.h>    // iovec
 
 class Buffer {
 public:

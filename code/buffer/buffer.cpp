@@ -47,7 +47,8 @@ void Buffer::RetrieveUntil(const char* end) {
     Retrieve(end - Peek()); // end指针 - 读指针 长度
 }
 
-// 取出所有数据，buffer归零，读写下标归零,在别的函数中会用到
+// 使用前建议：取出所有数据
+// buffer归零，读写下标归零,在别的函数中会用到
 void Buffer::RetrieveAll() {
     bzero(&buffer_[0], buffer_.size()); // 覆盖原本数据
     readPos_ = writePos_ = 0;
