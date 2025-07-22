@@ -1,10 +1,9 @@
 #include "buffer.h"
 
-// 读/写下标初始化，vector<char>初始化
-Buffer::Buffer(int initBufferSzie) : buffer_(initBufferSzie), readPos_(0), writePos_(0) {}
+// 读写下标初始化，vector<char>初始化
+Buffer::Buffer(int initBuffSize) : buffer_(initBuffSize), readPos_(0), writePos_(0)  {}  
 
 // 可写的数量：buffer大小 - 写下标
-// 常成员函数，不会修改Buffer类的成员变量
 size_t Buffer::WritableBytes() const {
     return buffer_.size() - writePos_;
 }
@@ -20,6 +19,7 @@ size_t Buffer::PrependableBytes() const {
 }
 
 const char* Buffer::Peek() const {
+    
     return &buffer_[readPos_];
 }
 
@@ -47,8 +47,7 @@ void Buffer::RetrieveUntil(const char* end) {
     Retrieve(end - Peek()); // end指针 - 读指针 长度
 }
 
-// 使用前建议：取出所有数据
-// buffer归零，读写下标归零,在别的函数中会用到
+// 取出所有数据，buffer归零，读写下标归零,在别的函数中会用到
 void Buffer::RetrieveAll() {
     bzero(&buffer_[0], buffer_.size()); // 覆盖原本数据
     readPos_ = writePos_ = 0;
@@ -82,18 +81,18 @@ void Buffer::Append(const std::string& str) {
     Append(str.c_str(), str.size());
 }
 
-void Append(const void* data, size_t len) {
+void Buffer::Append(const void* data, size_t len) {
     Append(static_cast<const char*>(data), len);
 }
 
 // 将buffer中的读下标的地方放到该buffer中的写下标位置
-void Append(const Buffer& buff) {
+void Buffer::Append(const Buffer& buff) {
     Append(buff.Peek(), buff.ReadableBytes());
 }
 
 // 将fd的内容读到缓冲区，即writable的位置
 ssize_t Buffer::ReadFd(int fd, int* Errno) {
-    char buff[65535];   // 栈区临时缓冲区
+    char buff[65535];   // 栈区
     struct iovec iov[2];
     size_t writeable = WritableBytes(); // 先记录能写多少
     // 分散读， 保证数据全部读完
