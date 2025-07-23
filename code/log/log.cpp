@@ -1,4 +1,11 @@
 #include "log.h"
+#include <iostream>
+
+// 懒汉式：局部静态变量法（最简单）
+Log* Log::Instance() {
+    static Log log;
+    return &log;
+}
 
 Log::Log() {
     fp_ = nullptr;
@@ -10,6 +17,7 @@ Log::Log() {
     isAsync_ = false;
 }
 
+// 单例模式下，这个似乎不会执行，所以补充一个Close函数
 Log::~Log() {
     while(!deque_->empty()) {
         deque_->flush();    // 唤醒消费者，处理掉剩下的任务
@@ -23,39 +31,12 @@ Log::~Log() {
     }
 }
 
-// 唤醒阻塞队列消费者，开始写日志
-void Log::flush() {
-    // 只有异步日志，才会用到日志队列deque_
-    if (isAsync_) deque_->flush();  
-    fflush(fp_);    // 清空输入缓冲区
-}
-
-// 懒汉式：局部静态变量法（最简单）
-Log* Log::Instance() {
-    static Log log;
-    return &log;
-}
-
-// 异步日志的写线程函数
-void Log::FlushLogThread() {
-    Log::Instance()->AsyncWrite_();
-}
-
-// 写线程真正的执行函数
-void Log::AsyncWrite_() {
-    string str = "";
-    while (deque_->pop(str)) {
-        lock_guard<mutex> locker(mtx_);
-        fputs(str.c_str(), fp_);
-    }
-}
-
 // 初始化日志实例
 void Log::init(int level, const char* path, const char* suffix, int maxQueCapacity) {
     isOpen_ = true;
-    level_ = level;
     path_ = path;
     suffix_ = suffix;
+    level_ = level;
     if (maxQueCapacity) {
         // 异步方式
         isAsync_ = true;
@@ -75,9 +56,9 @@ void Log::init(int level, const char* path, const char* suffix, int maxQueCapaci
 
     {
         lock_guard<mutex> locker(mtx_);
-        buff_.RetrieveAll();
+        buff_.RetrieveAll();    // buff清零
         if (fp_) {// 重新打开
-            flush();
+            flush();    
             fclose(fp_);
         }
         
@@ -97,7 +78,6 @@ void Log::write(int level, const char *format, ...) {
     struct tm *sysTime = localtime(&tSec);
     struct tm t = *sysTime;
 
-    va_list vaList;
     // 日志日期：期不一样，说明跨天了，需要切换到当天新的日志文件
     // 日志行数：判断当前写的行数是否刚好是MAX_LINES的整数倍
     if (toDay_ != t.tm_mday || (lineCount_ && (lineCount_  %  MAX_LINES == 0)))
@@ -123,29 +103,57 @@ void Log::write(int level, const char *format, ...) {
             assert(fp_ != nullptr);
         }
     }
-
-    // 在buffer内生成一条对应的日志信息
+    
     {
         unique_lock<mutex> locker(mtx_);
         lineCount_++;
+
+        // 在buffer内生成一条对应的日志信息1(TITLE)
         int n = snprintf(buff_.BeginWrite(), 128, "%d-%02d-%02d %02d:%02d:%02d.%06ld ",
                     t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
                     t.tm_hour, t.tm_min, t.tm_sec, now.tv_usec);
         buff_.HasWritten(n);
+        AppendLogLevelTitle_(level); 
         
-        AppendLogLevelTitle_(level);    
+        // 在buffer内生成一条对应的日志信息2(INFO)
+        va_list vaList;
         va_start(vaList, format);
         int m = vsnprintf(buff_.BeginWrite(), buff_.WritableBytes(), format, vaList);
         va_end(vaList);
         buff_.HasWritten(m);
-        buff_.Append("\n\0", 2);
+        buff_.Append("\n\0", 2);    // 换行
 
-        if(isAsync_ && deque_ && !deque_->full()) { // 异步方式（加入阻塞队列中，等待写线程读取日志信息）
+        if(isAsync_ && deque_ && !deque_->full()) { 
+            // 异步方式
+            // 加入阻塞队列中，等待写线程读取日志信息
             deque_->push_back(buff_.RetrieveAllToStr());
-        } else {    // 同步方式（直接向文件中写入日志信息）
-            fputs(buff_.Peek(), fp_);   // 同步就直接写入文件
+        } else {    
+            // 同步方式
+            // 直接向文件中写入日志信息
+            fputs(buff_.Peek(), fp_); 
         }
         buff_.RetrieveAll();    // 清空buff
+    }
+}
+
+// 清空fp_连接，若异步会通知deque_
+void Log::flush() {
+    // 只有异步日志，才会用到日志队列deque_
+    if (isAsync_) deque_->flush();  
+    fflush(fp_);    // 清空输入缓冲区
+}
+
+// 异步日志的写线程函数
+void Log::FlushLogThread() {
+    Log::Instance()->AsyncWrite_();
+}
+
+// 写线程真正的执行函数
+void Log::AsyncWrite_() {
+    string str = "";
+    while (deque_->pop(str)) {
+        lock_guard<mutex> locker(mtx_);
+        fputs(str.c_str(), fp_);
     }
 }
 
