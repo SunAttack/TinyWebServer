@@ -65,12 +65,17 @@ void TestThreadPool() {
     for(int i = 0; i < 18; i++) {
         threadpool.AddTask(std::bind(ThreadLogTask, i % 4, i * 10000));
     }
-    getchar();
+    getchar();  // 需输入
 }
 
 int main() {
-    TestLog();
-    std::cout << "TestLog出来" << std::endl;
-    // TestThreadPool();
+    // std::cout << "进入TestLog" << std::endl;
+    // TestLog();
+    // std::cout << "TestLog出来" << std::endl;
+
+    std::cout << "进入TestThreadPool" << std::endl;
+    TestThreadPool();
+    std::cout << "TestThreadPool出来" << std::endl;
+
     return 0;
 }

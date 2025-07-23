@@ -78,31 +78,32 @@ void Log::write(int level, const char *format, ...) {
     struct tm *sysTime = localtime(&tSec);
     struct tm t = *sysTime;
 
-    // 日志日期：期不一样，说明跨天了，需要切换到当天新的日志文件
-    // 日志行数：判断当前写的行数是否刚好是MAX_LINES的整数倍
-    if (toDay_ != t.tm_mday || (lineCount_ && (lineCount_  %  MAX_LINES == 0)))
     {
-        // 1. 准备新文件名，非临界区，无需加锁
-        char newFile[LOG_NAME_LEN];
-        char tail[36] = {0};
-        snprintf(tail, 36, "%04d_%02d_%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+        unique_lock<mutex> locker(mtx_);
 
-        if (toDay_ != t.tm_mday) {
-            snprintf(newFile, LOG_NAME_LEN - 72, "%s/%s%s", path_, tail, suffix_);
-        } else {
-            snprintf(newFile, LOG_NAME_LEN - 72, "%s/%s-%d%s", path_, tail, (lineCount_ / MAX_LINES), suffix_);
-        }
-        // 2. 临界区：加锁更新共享状态，关闭旧文件，打开新文件
+        // 日志日期：日期不一样，说明跨天了，需要切换到当天新的日志文件
+        // 日志行数：判断当前写的行数是否刚好是MAX_LINES的整数倍
+        if (toDay_ != t.tm_mday || (lineCount_ && (lineCount_  %  MAX_LINES == 0)))
         {
-            unique_lock<mutex> locker(mtx_);
-            toDay_ = t.tm_mday;
-            lineCount_ = 0;
+            char newFile[LOG_NAME_LEN];
+            char tail[36] = {0};
+            snprintf(tail, 36, "%04d_%02d_%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+
+            if (toDay_ != t.tm_mday) {
+                toDay_ = t.tm_mday;
+                lineCount_ = 0;
+                snprintf(newFile, LOG_NAME_LEN - 72, "%s/%s%s", path_, tail, suffix_);
+            } else {
+                snprintf(newFile, LOG_NAME_LEN - 72, "%s/%s-%d%s", path_, tail, (lineCount_ / MAX_LINES), suffix_);
+            }
+
             flush();
             fclose(fp_);
             fp_ = fopen(newFile, "a");
             assert(fp_ != nullptr);
         }
     }
+    
     
     {
         unique_lock<mutex> locker(mtx_);

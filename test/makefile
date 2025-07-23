@@ -38,4 +38,4 @@ $(BUILD_DIR)/test.o: test.cpp
 
 # ================= 7. 清理规则 =================
 clean:
-	rm -rf $(OBJS) $(TARGET) log1 log2
+	rm -rf $(OBJS) $(TARGET) log1 log2 testThreadpool
