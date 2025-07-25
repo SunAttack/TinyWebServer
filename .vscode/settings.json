@@ -55,6 +55,10 @@
         "mutex": "cpp",
         "semaphore": "cpp",
         "stop_token": "cpp",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "bitset": "cpp",
+        "unordered_set": "cpp",
+        "regex": "cpp",
+        "sstream": "cpp"
     }
 }
