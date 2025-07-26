@@ -19,7 +19,7 @@ using TimeoutCallBack = std::function<void()>;
 
 // 定时器节点结构
 struct TimerNode {
-    int id;
+    int id;             // connFd对应的数据，值传递
     TimeStamp expires;  // 超时时间点
     TimeoutCallBack cb; // 到期回调函数
     bool operator<(const TimerNode& t) {    // 重载比较运算符

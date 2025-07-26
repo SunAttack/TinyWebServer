@@ -17,7 +17,7 @@
 class HttpConn {
 public:
     static bool isET;                   // ET模式
-    static const char* srcDir;
+    static const char* srcDir;          // HTTP 服务器的资源目录路径，用于加载静态文件（HTML、CSS、JS 等）
     static std::atomic<int> userCount;  // 用户连接数，原子操作
 
 public:
@@ -50,6 +50,7 @@ public:
 
 
     // 简单接口
+    bool GetIsClose() { return isClose_; }
     int GetFd() const;
     int GetPort() const;
     const char* GetIP() const;

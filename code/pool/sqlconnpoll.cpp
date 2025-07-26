@@ -27,7 +27,7 @@ void SqlConnPool::Init(const char* host, int port,
     sem_init(&semId_, 0, MAX_CONN_);
 }
 
-// 个人觉得这里的出栈不是很好，所以修改了一下（大致有些地方大改）
+// 个人觉得这里的出栈不是很好（没做到先读出再弹出），所以修改了一下（大致有些地方大改）
 // MYSQL* SqlConnPool::GetConn() {
 //     MYSQL* conn = nullptr;
 //     if(connQue_.empty()) {
