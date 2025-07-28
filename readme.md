@@ -81,3 +81,15 @@ LIBS+= -ltirpc -lnsl
 ./webbench-1.5/webbench -c 1000 -t 10 http://localhost:1316/
 ./webbench-1.5/webbench -c 5000 -t 10 http://localhost:1316/
 ./webbench-1.5/webbench -c 10000 -t 10 http://localhost:1316/
+
+wrk -t2 -c1000 -d10s http://localhost:1316/
+
+## 运行完毕后，发现很slow
+
+创建一个find_flow分支，用于查找slow的原因；目前将范围定位于websercer.cpp和.h文件
+CLOSE + 无erase    2400
+CLOSE + erase 	  60
+dowork + erase     2
+dowork + 无erase 2
+
+## OKOK，到此为止先润设润设简历吧

@@ -183,7 +183,8 @@ void WebServer::Start() {
                 // 不要直接手动关闭（原版）
                 // CloseConn_(&users_[fd]);
                 // 只调用定时器的doWork，由定时器复杂触发CloseConn_回调
-                timer_->doWork(fd); // 已内部清除user_
+                // timer_->doWork(fd); // 已内部清除user_
+                CloseConn_(&users_[fd]);
             }
             else if(events & EPOLLIN) {
                 // 读事件
@@ -270,7 +271,7 @@ void WebServer::CloseConn_(HttpConn* client) {
     LOG_INFO("Client[%d] quit!", connFd);
     epoller_->DelFd(connFd);   // 从epoll中删除
     client->Close();
-    users_.erase(connFd);   // 内部清除users_中的HttpConn
+    // users_.erase(connFd);   // 内部清除users_中的HttpConn
 }
 
 
@@ -307,7 +308,8 @@ void WebServer::OnRead_(HttpConn* client) {
     ret = client->read(&readErrno);         // 将fd的内容读到httpconn的readBuff_缓存区
     if(ret <= 0 && readErrno != EAGAIN) {   // 读异常就关闭客户端(EAGAIN标志暂时无数据可读/写)
         // 只调用定时器的doWork，由定时器复杂触发CloseConn_回调
-        timer_->doWork(client->GetFd()); // 已内部清除user_
+        // timer_->doWork(client->GetFd()); // 已内部清除user_
+        CloseConn_(client);
         return;
     }
     // 业务逻辑的处理（先读后处理）
@@ -348,7 +350,8 @@ void WebServer::OnWrite_(HttpConn* client) {
         }
     }
     // 只调用定时器的doWork，由定时器复杂触发CloseConn_回调
-    timer_->doWork(client->GetFd()); // 已内部清除user_
+    // timer_->doWork(client->GetFd()); // 已内部清除user_
+    CloseConn_(client);
 }
 
 // 设置非阻塞
