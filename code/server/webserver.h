@@ -22,10 +22,9 @@
 class WebServer {
 public:
     WebServer(
-        int port, int trigMode, int timeoutMS, 
-        int sqlPort, const char* sqlUser, const  char* sqlPwd, 
-        const char* dbName, int connPoolNum, int threadNum,
-        bool openLog, int logLevel, int logQueSize);
+        int port, int trigMode, int timeoutMS, bool OptLinger,
+        int sqlPort, const char* sqlUser, const  char* sqlPwd, const char* dbName, 
+        int connPoolNum, int threadNum, bool openLog, int logLevel, int logQueSize);
     ~WebServer();
 
     void Start();

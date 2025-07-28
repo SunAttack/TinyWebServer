@@ -17,14 +17,14 @@ void HeapTimer::add(int id, int timeOut, const TimeoutCallBack& cb) {
         size_t n = heap_.size();
         ref_[id] = n;
 
-        // heap_.push_back({id, Clock::now() + MS(timeOut), cb});
+        heap_.push_back({id, Clock::now() + MS(timeOut), cb});
         // 结构体 TimerNode 的列表初始化
         // 等价于
         // TimerNode node(id, expires, cb);  // 构造
         // heap_.push_back(node);
 
-        // 推荐用
-        heap_.emplace_back(id, Clock::now() + MS(timeOut), cb);
+        // 推荐用（前提是你必须定义对应的构造函数 TimerNode(int, TimePoint, function<void()>)）
+        // heap_.emplace_back(id, Clock::now() + MS(timeOut), cb);
         siftup_(n);
     }
 }

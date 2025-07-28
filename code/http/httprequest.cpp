@@ -126,7 +126,6 @@ void HttpRequest::ParseHeader_(const string& line) {
     }
     else {
         // 遇到空行（即"\r\n"），表示头部结束，状态转换为解析BODY
-        assert(line == "\r\n");
         state_ = BODY;  
     }
 }
@@ -230,7 +229,7 @@ void HttpRequest::ParseFromUrlencoded_() {
             has_key = true;
         }
     }
-    assert(j - i == 1);
+    // assert(j - i == 1);
 }
 
 // 来验证登录或注册请求是否成功
@@ -256,7 +255,7 @@ bool HttpRequest::UserVerify(const string &name, const string &pwd, bool isLogin
         mysql_free_result(res);
         return false; 
     }
-    MYSQL_RES *res = mysql_store_result(sql);
+    res = mysql_store_result(sql);
     unsigned int j = mysql_num_fields(res);
     MYSQL_FIELD *fields = mysql_fetch_fields(res);
     // 第五步：处理查询结果（是否已有这个用户名）

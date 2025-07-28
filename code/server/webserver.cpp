@@ -18,10 +18,9 @@ using namespace std;
     logQueSize  用于日志单例化单线程的参数，0为同步日志，>0为异步日志
 */
 WebServer::WebServer(
-            int port, int trigMode, int timeoutMS,
-            int sqlPort, const char* sqlUser, const  char* sqlPwd,
-            const char* dbName, int connPoolNum, int threadNum,
-            bool openLog, int logLevel, int logQueSize):
+            int port, int trigMode, int timeoutMS, bool OptLinger,
+            int sqlPort, const char* sqlUser, const  char* sqlPwd, const char* dbName, 
+            int connPoolNum, int threadNum, bool openLog, int logLevel, int logQueSize):
             port_(port), timeoutMS_(timeoutMS), isClose_(false),
             timer_(new HeapTimer()), threadpool_(new ThreadPool(threadNum)), epoller_(new Epoller())
     {
@@ -274,6 +273,13 @@ void WebServer::CloseConn_(HttpConn* client) {
     users_.erase(connFd);   // 内部清除users_中的HttpConn
 }
 
+
+/*
+在events& EPOLLIN 或events & EPOLLOUT为真时，需要进行读写的处理。分别调用 DealRead_(&users_[fd])和DealWrite_(&users_[fd]) 函数。
+这里需要说明：DealListen_()函数并没有调用线程池中的线程，而DealRead_(&users_[fd])和DealWrite_(&users_[fd]) 则都交由线程池中的线程进行处理了。
+
+这就是Reactor，读写事件交给了工作线程处理。
+*/
 
 // 处理读事件，主要逻辑是将OnRead加入线程池的任务队列中
 void WebServer::DealRead_(HttpConn* client) {
